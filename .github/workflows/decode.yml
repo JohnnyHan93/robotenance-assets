@@ -1,0 +1,32 @@
+name: decode-b64
+on:
+  push:
+    paths: ['b64/**']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: decode-b64
+  cancel-in-progress: false
+jobs:
+  decode:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Decode b64 files
+        run: |
+          find b64 -type f -name '*.b64' | while read -r f; do
+            out="${f#b64/}"; out="${out%.b64}"
+            mkdir -p "$(dirname "$out")"
+            base64 -d "$f" > "$out"
+          done
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "nothing to commit"; exit 0; fi
+          git commit -m "Decode b64 assets [bot]"
+          git push
